@@ -1,0 +1,910 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mighty Morphin Command Center</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: sala de mando — barra fija de secciones, hero con las 5 cartas, ficha por Ranger con dial interactivo, tracker de partida, referencia de reglas.
+   Diseño deliberadamente de un solo tema oscuro (consola del Command Center). */
+:root{
+  --bg:#0b1020; --panel:#121a2f; --panel-2:#18213b; --line:#28324f; --fg:#e9edf7; --muted:#97a2c3; --dim:#5f6a8c;
+  --red:#e3262d; --blue:#2f63e6; --yellow:#f3c300; --black:#9aa3b5; --pink:#e24aa7;
+  --gold:#f0b429; --ok:#36c26b; --warn:#f0a020; --ko:#ff4d5e;
+  --accent:var(--red);
+  --f-display:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Barlow", "Segoe UI", system-ui, sans-serif;
+  --f-cond:"Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.55;
+  background-image:radial-gradient(1200px 600px at 85% -10%, rgba(47,99,230,.16), transparent 60%),radial-gradient(900px 500px at -10% 10%, rgba(227,38,45,.12), transparent 60%);}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+a{color:inherit}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.14em;font-size:13px;color:var(--muted);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:rgba(11,16,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:18px;height:54px;overflow-x:auto;scrollbar-width:none}
+.nav .wrap::-webkit-scrollbar{display:none}
+.brand{font-family:var(--f-display);font-weight:700;letter-spacing:.04em;white-space:nowrap;display:flex;align-items:center;gap:10px}
+.coins{display:flex;gap:3px}
+.coins i{width:9px;height:9px;transform:rotate(45deg);display:block}
+.nav a{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-size:14px;text-decoration:none;color:var(--muted);white-space:nowrap;font-weight:600}
+.nav a:hover{color:var(--fg)}
+.nav .sp{flex:1}
+
+/* hero */
+.hero{padding-block:48px 28px}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:center}
+.hero h1{font-size:clamp(34px,5.4vw,60px);font-weight:700;letter-spacing:-.01em}
+.hero h1 span{display:block;font-size:.42em;letter-spacing:.2em;color:var(--muted);font-family:var(--f-cond);font-weight:600;margin-bottom:8px}
+.hero p.lede{color:var(--muted);font-size:18px;max-width:58ch;margin:16px 0 22px}
+.stats{display:flex;flex-wrap:wrap;gap:10px}
+.stat{border:1px solid var(--line);background:var(--panel);padding:10px 14px;min-width:110px}
+.stat b{display:block;font-family:var(--f-display);font-size:24px}
+.stat small{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-size:12px}
+.fan{position:relative;height:420px}
+.fan img{position:absolute;width:52%;max-width:240px;top:50%;left:50%;border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,.55);transition:transform .35s ease;cursor:pointer;border:1px solid rgba(255,255,255,.08)}
+.fan img:hover{z-index:9}
+@media (prefers-reduced-motion:reduce){.fan img{transition:none}}
+
+section{padding-block:44px}
+.sec-head{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.sec-head h2{font-size:clamp(26px,3.4vw,36px)}
+.sec-head p{color:var(--muted);max-width:60ch;margin:6px 0 0}
+
+/* ranger tabs */
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.tab{background:var(--panel);border:1px solid var(--line);padding:10px 12px;text-align:left;display:flex;gap:10px;align-items:center;position:relative;overflow:hidden}
+.tab::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.tab .dot{width:12px;height:12px;transform:rotate(45deg);background:var(--c);flex:none}
+.tab b{font-family:var(--f-display);font-size:15px;display:block;line-height:1.1}
+.tab small{color:var(--muted);font-family:var(--f-cond);letter-spacing:.06em;text-transform:uppercase;font-size:12px}
+.tab[aria-selected="true"]{background:var(--panel-2);border-color:var(--c);box-shadow:inset 0 -2px 0 var(--c)}
+
+.ranger{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;background:var(--panel);border:1px solid var(--line);padding:22px;position:relative}
+.ranger::after{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--c)}
+.cardview{display:flex;flex-direction:column;gap:10px}
+.flip{perspective:1400px;cursor:zoom-in;aspect-ratio:1407/2000;max-width:100%}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.flip.back .flip-inner{transform:rotateY(180deg)}
+.flip img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px;backface-visibility:hidden;box-shadow:0 16px 36px rgba(0,0,0,.5)}
+.flip img.b{transform:rotateY(180deg)}
+@media (prefers-reduced-motion:reduce){.flip-inner{transition:none}}
+.seg{display:flex;border:1px solid var(--line)}
+.seg button{flex:1;background:transparent;border:0;padding:8px;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--fg);box-shadow:inset 0 -2px 0 var(--c)}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.meta div{background:var(--panel-2);padding:8px 10px;border:1px solid var(--line)}
+.meta small{display:block;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-size:11px}
+.meta b{font-family:var(--f-display);font-size:16px}
+
+.rinfo{min-width:0}
+.rhead{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.rhead h3{font-size:clamp(26px,3vw,34px)}
+.rhead .code{font-family:var(--f-cond);color:var(--muted);letter-spacing:.1em}
+.role{display:inline-block;background:var(--c);color:#0b1020;font-family:var(--f-cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;padding:3px 10px;margin-top:8px}
+.role.lt{color:#fff}
+.kw{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.kw span{font-family:var(--f-cond);font-size:13px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);padding:2px 8px;color:var(--muted)}
+.summary{color:var(--fg);margin:12px 0 0;max-width:70ch}
+
+/* dial */
+.dial{margin-top:20px;border:1px solid var(--line);background:#0e1528}
+.dial-top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.dial-top h4{font-size:15px;letter-spacing:.05em}
+.phase{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-size:12px;padding:2px 8px;border:1px solid var(--line);color:var(--muted)}
+.phase.zord{border-color:var(--gold);color:var(--gold)}
+.clicks{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;padding:10px 12px 0}
+.clicks button{background:var(--panel-2);border:1px solid var(--line);padding:6px 0;font-family:var(--f-display);font-size:14px;font-weight:600}
+.clicks button.ko{color:var(--ko);font-size:11px}
+.clicks button[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:#0b1020}
+.clicks button.ko[aria-pressed="true"]{background:var(--ko);color:#fff}
+.rows{padding:10px 12px 12px;display:grid;gap:6px}
+.row{display:grid;grid-template-columns:90px 54px minmax(0,1fr);gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);padding:6px 8px}
+.row .lbl{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-size:12px;color:var(--muted)}
+.chip{width:46px;height:36px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:20px;border-radius:3px;background:var(--pc,#2a3350);color:var(--pt,#fff)}
+.chip.sp{background:#f4f4f4;color:#111;box-shadow:inset 0 0 0 3px #111}
+.chip.none{background:#f4f4f4;color:#111}
+.chip.ko{background:transparent;color:var(--ko);font-size:14px;box-shadow:inset 0 0 0 1px var(--ko)}
+.pw b{font-family:var(--f-display);font-size:14px;display:block}
+.pw span{color:var(--muted);font-size:14px;line-height:1.4;display:block}
+
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}
+.box{background:var(--panel-2);border:1px solid var(--line);padding:14px 16px;min-width:0}
+.box h4{font-size:15px;letter-spacing:.04em;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.box h4 .star{width:20px;height:20px;border-radius:50%;background:#e9edf7;color:#0b1020;display:grid;place-items:center;font-size:12px;flex:none}
+.box p{margin:0 0 8px;color:var(--fg)}
+.box p.q{color:var(--muted);font-style:italic;font-size:14px;border-left:2px solid var(--line);padding-left:10px}
+.box ul{margin:0;padding-left:18px}
+.box li{margin-bottom:6px}
+.box li::marker{color:var(--c,var(--gold))}
+.full{grid-column:1/-1}
+.tag{display:inline-block;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.08em;font-size:11px;padding:1px 6px;margin-left:4px;border:1px solid var(--line);color:var(--muted);vertical-align:middle}
+
+/* strategy */
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.plan{background:var(--panel);border:1px solid var(--line);padding:18px;min-width:0}
+.plan .eyebrow{color:var(--gold)}
+.plan h3{font-size:20px;margin:6px 0 10px}
+.plan p,.plan li{color:var(--fg)}
+.plan ul{padding-left:18px;margin:0}
+.plan li{margin-bottom:6px}
+
+.timeline{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;margin:18px 0 8px}
+.timeline div{padding:10px 0;text-align:center;font-family:var(--f-display);font-weight:700;font-size:14px;background:var(--panel-2);border:1px solid var(--line)}
+.timeline .s{background:#1d2a4d}
+.timeline .k{color:var(--ko);border-color:rgba(255,77,94,.4);font-size:11px}
+.timeline .z{background:rgba(240,180,41,.18);border-color:var(--gold);color:var(--gold)}
+.tl-legend{display:flex;flex-wrap:wrap;gap:16px;color:var(--muted);font-size:14px}
+.tl-legend i{display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px}
+
+.syn{width:100%;border-collapse:collapse;min-width:720px}
+.syn th,.syn td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+.syn th{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-size:12px;color:var(--muted);font-weight:600}
+.syn td:first-child{font-family:var(--f-display);font-weight:600;white-space:nowrap}
+.scroll{overflow-x:auto;border:1px solid var(--line);background:var(--panel)}
+.who{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-cond);font-weight:600}
+.who i{width:9px;height:9px;transform:rotate(45deg);display:inline-block}
+
+/* tracker */
+.tracker{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.tk{background:var(--panel);border:1px solid var(--line);padding:12px;position:relative;min-width:0}
+.tk::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:var(--c)}
+.tk.isko{opacity:.45}
+.tk h4{font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.tk .clk{font-family:var(--f-display);font-size:34px;font-weight:700;line-height:1;margin:10px 0 2px}
+.tk .clk small{font-size:13px;color:var(--muted);font-family:var(--f-cond);letter-spacing:.1em;font-weight:600}
+.mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:10px 0}
+.mini div{background:var(--panel-2);text-align:center;padding:4px 0;border:1px solid var(--line)}
+.mini small{display:block;font-family:var(--f-cond);font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.mini b{font-family:var(--f-display);font-size:16px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.btn{background:var(--panel-2);border:1px solid var(--line);padding:8px 6px;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.08em;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--muted)}
+.btn.dmg{border-color:rgba(255,77,94,.5);color:#ffb3ba}
+.btn.heal{border-color:rgba(54,194,107,.5);color:#a5ebbf}
+.btn.primary{background:var(--gold);color:#1a1300;border-color:var(--gold)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.tokens{display:flex;gap:6px;margin-top:8px;align-items:center}
+.tokens span{font-family:var(--f-cond);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;flex:1}
+.tok{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);background:transparent;padding:0}
+.tok.on{background:var(--warn);border-color:var(--warn)}
+.tbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);padding:12px 14px;margin-bottom:12px}
+.tbar .st{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.gg-on{color:var(--ok)} .gg-off{color:var(--muted)}
+.alert{border:1px solid var(--gold);background:rgba(240,180,41,.1);padding:12px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.alert p{margin:0}
+.log{margin-top:12px;font-size:14px;color:var(--muted);max-height:140px;overflow:auto;border:1px solid var(--line);padding:8px 12px;background:var(--panel)}
+.log div{padding:2px 0;border-bottom:1px dashed var(--line)}
+
+/* glossary */
+.gl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.g{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;background:var(--panel);border:1px solid var(--line);padding:10px 12px;align-items:start}
+.g .sw{width:26px;height:26px;border-radius:50%;background:var(--pc);box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.g b{font-family:var(--f-display);font-size:14px;display:block}
+.g em{font-style:normal;font-family:var(--f-cond);color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.g span{display:block;font-size:14px;color:var(--muted);line-height:1.45;margin-top:2px}
+.g .who-row{display:flex;gap:4px;margin-top:6px}
+.g .who-row i{width:8px;height:8px;transform:rotate(45deg);display:block}
+.gfilter{display:flex;flex-wrap:wrap;gap:6px}
+.gfilter button{background:var(--panel);border:1px solid var(--line);padding:6px 12px;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-size:13px;font-weight:600;color:var(--muted)}
+.gfilter button[aria-pressed="true"]{color:var(--fg);border-color:var(--gold)}
+
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.rules .plan h3{font-size:18px}
+footer{border-top:1px solid var(--line);padding-block:24px 40px;color:var(--dim);font-size:13px}
+footer p{margin:4px 0;max-width:90ch}
+
+/* lightbox */
+.lb{position:fixed;inset:0;background:rgba(5,8,18,.92);z-index:100;display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.lb img{max-height:92vh;max-width:min(92vw,700px);border-radius:12px}
+.lb button{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(14px + env(safe-area-inset-right,0px));background:var(--panel);border:1px solid var(--line);padding:8px 14px;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em}
+
+@media (max-width:980px){
+  .hero-grid{grid-template-columns:1fr}
+  .fan{height:330px}
+  .ranger{grid-template-columns:1fr}
+  .cardview{max-width:360px;margin:0 auto;width:100%}
+  .tracker{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid3,.gl{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .tabs{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+  .tab{padding:8px 4px;justify-content:center}
+  .tab .txt{display:none}
+  .tab .dot{width:16px;height:16px}
+  .cols,.grid2,.grid3,.gl,.rules{grid-template-columns:1fr}
+  .tracker{grid-template-columns:1fr}
+  .row{grid-template-columns:62px 48px minmax(0,1fr);gap:8px}
+  .clicks{gap:2px}
+  .clicks button{font-size:12px}
+  .clicks button.ko{font-size:9px}
+  .timeline div{font-size:11px}
+  .timeline .k{font-size:8px}
+  .fan{height:260px}
+  .ranger{padding:14px}
+}
+
+/* ===== MORPHIN FX LAYER ===== */
+:root{--rainbow:linear-gradient(90deg,var(--red),var(--blue),var(--yellow),var(--black),var(--pink),var(--red))}
+@keyframes slide{to{background-position:200% 0}}
+@keyframes floor{to{background-position:0 64px,0 0}}
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -8px}}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 var(--c),0 0 18px -4px var(--c)}50%{box-shadow:0 0 0 2px var(--c),0 0 30px 0 var(--c)}}
+@keyframes shimmer{0%{background-position:-150% 0}100%{background-position:250% 0}}
+@keyframes rise{from{opacity:.0001;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+body{background-color:var(--bg);
+  background-image:
+    radial-gradient(1200px 700px at 90% -10%, rgba(47,99,230,.22), transparent 60%),
+    radial-gradient(900px 600px at -10% 5%, rgba(227,38,45,.18), transparent 60%),
+    radial-gradient(800px 600px at 50% 110%, rgba(226,74,167,.12), transparent 60%),
+    repeating-conic-gradient(from 45deg, rgba(255,255,255,.025) 0 25%, transparent 0 50%);
+  background-size:auto,auto,auto,28px 28px;background-attachment:fixed}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:200;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);mix-blend-mode:overlay}
+
+/* nav con barra arcoíris viva */
+.nav{background:linear-gradient(180deg,rgba(11,16,32,.96),rgba(11,16,32,.82));border-bottom:0}
+.nav::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--rainbow);background-size:200% 100%;animation:slide 6s linear infinite}
+.nav a{position:relative;padding:4px 0}
+.nav a::after{content:"";position:absolute;left:0;right:100%;bottom:-2px;height:2px;background:var(--gold);transition:right .25s}
+.nav a:hover::after{right:0}
+.coins i{box-shadow:0 0 8px currentColor}
+.coins i:nth-child(1){color:var(--red)}.coins i:nth-child(2){color:var(--blue)}.coins i:nth-child(3){color:var(--yellow)}.coins i:nth-child(4){color:var(--black)}.coins i:nth-child(5){color:var(--pink)}
+
+/* hero: suelo de rejilla del Command Center */
+.hero{position:relative;overflow:hidden;isolation:isolate;padding-block:64px 44px}
+.hero-fx{position:absolute;inset:0;pointer-events:none;z-index:-1}
+.hero-fx::before{content:"";position:absolute;left:-30%;right:-30%;bottom:-10%;height:62%;
+  background-image:linear-gradient(rgba(240,180,41,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(47,99,230,.35) 1px,transparent 1px);
+  background-size:64px 64px,64px 64px;transform:perspective(420px) rotateX(62deg);transform-origin:50% 100%;
+  mask-image:linear-gradient(to top,#000 10%,transparent 85%);-webkit-mask-image:linear-gradient(to top,#000 10%,transparent 85%);animation:floor 2.4s linear infinite}
+.hero-fx::after{content:"";position:absolute;width:640px;height:640px;right:-120px;top:-160px;border-radius:50%;
+  background:conic-gradient(from 0deg,var(--red),var(--blue),var(--yellow),var(--black),var(--pink),var(--red));filter:blur(110px);opacity:.28}
+.hero h1{font-size:clamp(38px,6vw,72px);text-transform:uppercase;letter-spacing:.01em;
+  background:linear-gradient(100deg,#fff 0%,#fff 35%,var(--gold) 50%,#fff 65%,#fff 100%);background-size:250% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 5s ease-in-out infinite;
+  filter:drop-shadow(0 4px 0 rgba(227,38,45,.55)) drop-shadow(0 0 24px rgba(47,99,230,.45))}
+.hero h1 span{-webkit-text-fill-color:var(--gold);color:var(--gold);filter:none;letter-spacing:.32em}
+.hero p.lede strong{color:var(--gold)}
+.stat{position:relative;border:0;background:linear-gradient(160deg,var(--panel-2),var(--panel));clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));padding:12px 18px}
+.stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rainbow);background-size:100% 400%}
+.stat b{font-size:28px;background:linear-gradient(180deg,#fff,#b9c4e6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.fan img{filter:drop-shadow(0 0 18px var(--g,rgba(255,255,255,.2)));animation:bob 5s ease-in-out infinite;animation-delay:var(--d,0s)}
+
+/* encabezados con rayo */
+.sec-head h2{text-transform:uppercase;letter-spacing:.02em;position:relative;padding-bottom:12px}
+.sec-head h2::after{content:"";position:absolute;left:0;bottom:0;width:140px;height:4px;background:var(--rainbow);clip-path:polygon(0 0,62% 0,70% 100%,78% 0,100% 0,100% 100%,0 100%)}
+.eyebrow{color:var(--gold)}
+.eyebrow::before{content:"◆ ";color:var(--red)}
+
+/* tabs angulares */
+.tab{border:0;background:linear-gradient(135deg,var(--panel-2),var(--panel));clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);transition:transform .2s,background .2s}
+.tab::before{width:100%;opacity:0;transition:opacity .25s;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 45%,transparent),transparent)}
+.tab:hover{transform:translateY(-2px)}
+.tab:hover::before{opacity:.5}
+.tab[aria-selected="true"]{box-shadow:none;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 30%,var(--panel-2)),var(--panel))}
+.tab[aria-selected="true"]::before{opacity:1}
+.tab > *{position:relative}
+.tab .dot{box-shadow:0 0 12px var(--c)}
+
+/* panel del Ranger: placa de armadura */
+.ranger{border:0;background:
+   linear-gradient(135deg,color-mix(in srgb,var(--c) 16%,transparent),transparent 45%),
+   linear-gradient(180deg,var(--panel-2),var(--panel));
+  clip-path:polygon(0 0,calc(100% - 34px) 0,100% 34px,100% 100%,34px 100%,0 calc(100% - 34px));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent);animation:rise .45s ease both;overflow:hidden}
+.ranger::after{height:4px;background:linear-gradient(90deg,var(--c),transparent 80%)}
+.ranger::before{content:"";position:absolute;right:-40px;top:-40px;width:320px;height:320px;pointer-events:none;opacity:.12;
+  background:repeating-conic-gradient(from 45deg,var(--c) 0 25%,#fff 0 50%);background-size:70px 70px;
+  mask-image:radial-gradient(circle at 75% 25%,#000,transparent 65%);-webkit-mask-image:radial-gradient(circle at 75% 25%,#000,transparent 65%)}
+.ranger > *{position:relative;z-index:1}
+.rhead h3{text-transform:uppercase;font-size:clamp(28px,3.6vw,42px);text-shadow:0 0 28px color-mix(in srgb,var(--c) 70%,transparent)}
+.role{clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);padding:4px 16px;box-shadow:0 0 20px var(--c)}
+.kw span{border-color:color-mix(in srgb,var(--c) 40%,var(--line));background:color-mix(in srgb,var(--c) 8%,transparent);color:var(--fg)}
+
+/* carta holográfica con inclinación */
+.flip{transition:transform .15s ease-out;transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))}
+.flip img{box-shadow:0 22px 50px rgba(0,0,0,.6),0 0 40px -6px var(--c)}
+.glare{position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:3;mix-blend-mode:color-dodge;opacity:0;transition:opacity .25s;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.55),transparent 45%),
+   linear-gradient(115deg,transparent 30%,rgba(255,0,140,.25) 42%,rgba(0,200,255,.25) 50%,rgba(255,230,0,.25) 58%,transparent 70%);
+  background-size:100% 100%,250% 250%;background-position:center,var(--mx,50%) var(--my,50%)}
+.flip:hover .glare{opacity:1}
+.seg{border:0;background:var(--panel);clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+.seg button[aria-pressed="true"]{background:color-mix(in srgb,var(--c) 30%,var(--panel-2))}
+.meta div{border:0;border-left:3px solid var(--c);background:linear-gradient(90deg,color-mix(in srgb,var(--c) 12%,var(--panel-2)),var(--panel-2))}
+
+/* dial tipo consola */
+.dial{background:linear-gradient(180deg,#0a1122,#0d1630);border:1px solid color-mix(in srgb,var(--c) 35%,var(--line));box-shadow:inset 0 0 40px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.4)}
+.dial-top{background:linear-gradient(90deg,color-mix(in srgb,var(--c) 22%,transparent),transparent)}
+.phase.zord{box-shadow:0 0 14px rgba(240,180,41,.5);background:rgba(240,180,41,.12)}
+.clicks button{border-radius:3px;transition:transform .15s,background .15s}
+.clicks button:hover{transform:translateY(-2px);border-color:var(--c)}
+.clicks button[aria-pressed="true"]{animation:pulseGlow 1.8s ease-in-out infinite}
+.clicks button:nth-child(n+9):not(.ko){border-color:rgba(240,180,41,.45)}
+.row{border:0;background:linear-gradient(90deg,rgba(255,255,255,.04),transparent);border-left:2px solid color-mix(in srgb,var(--c) 50%,transparent);animation:rise .3s ease both}
+.row:nth-child(2){animation-delay:.04s}.row:nth-child(3){animation-delay:.08s}.row:nth-child(4){animation-delay:.12s}
+.chip{border-radius:5px;box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -3px 0 rgba(0,0,0,.25),0 0 16px -4px var(--pc,transparent)}
+.chip.sp{box-shadow:inset 0 0 0 3px #111,0 0 16px -2px #fff}
+
+/* cajas */
+.box{border:0;background:linear-gradient(160deg,var(--panel-2),rgba(18,26,47,.6));box-shadow:inset 0 0 0 1px var(--line);transition:transform .2s,box-shadow .2s}
+.box:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c,var(--gold)) 60%,transparent),0 10px 30px -10px color-mix(in srgb,var(--c,var(--gold)) 50%,transparent)}
+.box h4{text-transform:uppercase}
+.box h4 .star{background:radial-gradient(circle at 35% 30%,#fff,#b7c0d8);box-shadow:0 0 10px rgba(255,255,255,.4)}
+.plan{border:0;position:relative;background:linear-gradient(165deg,var(--panel-2),var(--panel));clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,0 100%);transition:transform .25s}
+.plan::before{content:"";position:absolute;inset:0;padding:1px;background:linear-gradient(135deg,rgba(240,180,41,.6),transparent 40%,transparent 60%,rgba(47,99,230,.6));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.plan:hover{transform:translateY(-3px)}
+.plan h3{text-transform:uppercase}
+.plan li::marker{color:var(--gold);content:"◆  "}
+
+/* timeline */
+.timeline div{border-radius:3px}
+.timeline .z{background:linear-gradient(110deg,rgba(240,180,41,.12) 30%,rgba(255,230,140,.45) 50%,rgba(240,180,41,.12) 70%);background-size:250% 100%;animation:shimmer 3s linear infinite;box-shadow:0 0 18px -4px var(--gold)}
+.timeline .k{background:repeating-linear-gradient(-45deg,rgba(255,77,94,.12) 0 6px,transparent 6px 12px)}
+
+/* tabla */
+.scroll{border:0;box-shadow:inset 0 0 0 1px var(--line);background:linear-gradient(180deg,var(--panel-2),var(--panel))}
+.syn tbody tr{transition:background .2s}
+.syn tbody tr:hover{background:rgba(240,180,41,.06)}
+.who i{box-shadow:0 0 8px currentColor}
+
+/* tracker */
+.tk{border:0;background:linear-gradient(170deg,color-mix(in srgb,var(--c) 14%,var(--panel-2)),var(--panel));clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 30%,transparent)}
+.tk .clk{text-shadow:0 0 24px var(--c)}
+.tk.isko{filter:grayscale(1)}
+.btn{clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);border:0;box-shadow:inset 0 0 0 1px var(--line);transition:transform .12s,background .2s}
+.btn:active{transform:scale(.97)}
+.btn.dmg{background:rgba(255,77,94,.1)} .btn.heal{background:rgba(54,194,107,.1)}
+.btn.primary{box-shadow:0 0 22px rgba(240,180,41,.6);background:linear-gradient(180deg,#ffd45c,var(--gold))}
+.tok{transition:all .2s}
+.tok.on{box-shadow:0 0 12px var(--warn)}
+.alert{animation:rise .3s ease both;box-shadow:0 0 30px -10px var(--gold)}
+.tbar,.log{border:0;box-shadow:inset 0 0 0 1px var(--line)}
+
+/* glosario */
+.g{border:0;background:linear-gradient(150deg,var(--panel-2),var(--panel));box-shadow:inset 0 0 0 1px var(--line);transition:transform .2s,box-shadow .2s}
+.g:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px var(--pc),0 0 24px -10px var(--pc)}
+.g .sw{box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.3),0 0 12px -2px var(--pc)}
+.gfilter button{clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);border:0;box-shadow:inset 0 0 0 1px var(--line)}
+.gfilter button[aria-pressed="true"]{background:rgba(240,180,41,.15);box-shadow:inset 0 0 0 1px var(--gold)}
+
+footer{border-top:0;position:relative}
+footer::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--rainbow);opacity:.6}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important}
+  .flip{transform:none!important}
+}
+@media (max-width:640px){
+  .hero-fx::after{width:360px;height:360px;right:-140px}
+  .ranger{clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,20px 100%,0 calc(100% - 20px))}
+}
+</style>
+
+<nav class="nav" aria-label="Secciones">
+  <div class="wrap">
+    <div class="brand"><span class="coins"><i style="background:var(--red)"></i><i style="background:var(--blue)"></i><i style="background:var(--yellow)"></i><i style="background:var(--black)"></i><i style="background:var(--pink)"></i></span>Command Center</div>
+    <span class="sp"></span>
+    <a href="#escuadra">Escuadra</a>
+    <a href="#gogo">¡Go Go!</a>
+    <a href="#estrategia">Estrategia</a>
+    <a href="#sinergias">Sinergias</a>
+    <a href="#partida">Partida</a>
+    <a href="#poderes">Poderes</a>
+    <a href="#reglas">Reglas</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-fx" aria-hidden="true"></div>
+  <div class="wrap hero-grid">
+    <div>
+      <h1><span>HeroClix · Iconix HBX1</span>Mighty Morphin Power Rangers</h1>
+      <p class="lede">Gestor de equipo para tus cinco Rangers originales: cómo se lee cada dial, qué hace cada poder, cómo encadenar sus rasgos y cuándo pulsar el botón rojo de <strong>¡Go! ¡Go! Power Rangers!</strong> para pasar a los Zords.</p>
+      <div class="stats">
+        <div class="stat"><b class="num">5</b><small>Rangers</small></div>
+        <div class="stat"><b class="num">300</b><small>Puntos (5 × 60)</small></div>
+        <div class="stat"><b class="num">1×</b><small>¡Go Go! por partida</small></div>
+        <div class="stat"><b class="num">9–11</b><small>Clics modo Zord</small></div>
+      </div>
+    </div>
+    <div class="fan" id="fan" aria-label="Las cinco cartas del equipo"></div>
+  </div>
+</header>
+
+<main>
+<section id="escuadra">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">La escuadra</div>
+        <h2>Fichas de los Rangers</h2>
+        <p>Pulsa un clic del dial para ver sus valores y poderes en ese momento. Toca la carta para ampliarla.</p>
+      </div>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <article class="ranger" id="ranger" aria-live="polite"></article>
+  </div>
+</section>
+
+<section id="gogo">
+  <div class="wrap">
+    <div class="sec-head"><div>
+      <div class="eyebrow">Mecánica clave del equipo</div>
+      <h2>¡Go! ¡Go! Power Rangers! y el modo Zord</h2>
+      <p>Los cinco comparten el mismo rasgo y la misma estructura de dial. Entenderla es la diferencia entre ganar y perder con este equipo.</p>
+    </div></div>
+    <div class="timeline" aria-label="Estructura del dial">
+      <div class="s">1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div class="k">KO</div><div class="k">KO</div><div class="z">9</div><div class="z">10</div><div class="z">11</div><div class="k">KO</div>
+    </div>
+    <div class="tl-legend">
+      <span><i style="background:#1d2a4d"></i>Clic inicial</span>
+      <span><i style="background:var(--panel-2);border:1px solid var(--line)"></i>Forma Ranger (6 clics de vida)</span>
+      <span><i style="border:1px solid var(--ko)"></i>KO</span>
+      <span><i style="background:rgba(240,180,41,.35)"></i>Forma Zord: STOP, gigante, valores máximos</span>
+    </div>
+    <div class="grid3" style="margin-top:18px">
+      <div class="plan">
+        <div class="eyebrow">Cómo funciona</div>
+        <h3>Un rescate para todo el equipo</h3>
+        <ul>
+          <li>Una sola vez por partida <strong>para todo el equipo</strong> (no una por Ranger).</li>
+          <li>Se activa cuando un Ranger <strong>iba a quedar KO</strong>: en vez de eso, <strong>todos</strong> los Rangers amigos con el rasgo giran a su clic 9.</li>
+          <li>Es opcional (“you may”). Si no lo usas, el Ranger queda KO normalmente.</li>
+          <li><strong>Protected: Pulse Wave</strong>: el Pulse Wave rival no puede ignorar este rasgo.</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <div class="eyebrow">Modo Zord · clics 9–11</div>
+        <h3>STOP: tres golpes, ni uno más</h3>
+        <ul>
+          <li>Cada Zord trae <strong>STOP</strong>: cuando un ataque rival revela uno de esos clics, el dial se detiene ahí y el daño sobrante se pierde.</li>
+          <li>En la práctica, cada Ranger en modo Zord <strong>aguanta 3 ataques</strong> sin importar cuánto daño hagan. STOP no se puede contrarrestar ni ignorar.</li>
+          <li>Ojo: STOP solo frena daño <em>de ataques</em>. El daño por forzar (pushing) u otros efectos sí te mueve varios clics.</li>
+          <li>Todos ganan el símbolo de <strong>Gigante</strong>; Rosa además vuela.</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <div class="eyebrow">Cuándo activarlo</div>
+        <h3>Cuanto más daño acumulado, mejor</h3>
+        <ul>
+          <li>Ideal: varios Rangers en los clics 4–6. El salto a 9 es una curación masiva y una subida de valores (ataque 11–12, defensa 18–20).</li>
+          <li>Un Ranger en clic 1–2 “pierde” vida al saltar (de 6 golpes a 3 ataques con STOP), aunque gana el Zord.</li>
+          <li>Si el primero en caer es un Ranger clave y el resto está entero, valora dejarlo caer y guardar el ¡Go Go!. Es una decisión, no un automático.</li>
+          <li>Los Rangers ya eliminados no vuelven: no esperes demasiado.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="estrategia">
+  <div class="wrap">
+    <div class="sec-head"><div>
+      <div class="eyebrow">Plan de juego</div>
+      <h2>Estrategia del equipo</h2>
+      <p>300 puntos exactos en cinco figuras de 60: sin huecos para extras en formato estándar. Tu fuerza es la acción en grupo: rasgos que se activan entre ellos y quitan fichas de acción.</p>
+    </div></div>
+    <div class="grid3">
+      <div class="plan">
+        <div class="eyebrow">Fase 1 · Despliegue</div>
+        <h3>Bloque compacto</h3>
+        <ul>
+          <li>Rojo en el centro: su Empower (clics 3–6) y su Leadership quieren aliados adyacentes.</li>
+          <li>Amarillo pegado a quien vaya a recibir disparos: <strong>Defend 19</strong> en clics 1–3 sube la defensa de los adyacentes.</li>
+          <li>Rosa detrás, con línea de visión limpia: alcance 5 y dos objetivos.</li>
+          <li>Azul en el flanco que quieras forzar: al inicio de cada turno puede recolocar a un Ranger hasta 3 casillas.</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <div class="eyebrow">Fase 2 · Choque</div>
+        <h3>Cargas encadenadas</h3>
+        <ul>
+          <li>Rojo y Negro abren con <strong>Charge</strong> (velocidad 8) contra lo más valioso del rival.</li>
+          <li>Cada impacto de un Ranger dispara <strong>Saving Bulk and Skull</strong> (Amarillo): quita una ficha de acción al que golpeó (una vez por turno).</li>
+          <li>Si la Power Sword de Rojo saca 1–3 en Blades, quita otra ficha a un aliado. Así puedes forzar sin acumular daño.</li>
+          <li>Pide Leadership con Rojo al inicio de turno: con éxito, todos los Rangers tienen +1 al ataque ese turno.</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <div class="eyebrow">Fase 3 · Megazord</div>
+        <h3>Remate gigante</h3>
+        <ul>
+          <li>Con el equipo dañado, deja que el primero caiga y activa <strong>¡Go Go!</strong>.</li>
+          <li>Rojo Zord: Quake con <strong>Giant Reach 6</strong>, golpea a todos los rivales hasta 6 casillas.</li>
+          <li>Negro Zord: cada personaje que golpea recibe una ficha de acción, ideal para bloquear sus próximos turnos.</li>
+          <li>Rosa Zord vuela; Amarillo Zord da Probability Control; Azul Zord es el muro (Toughness + defensa 19).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="plan">
+        <div class="eyebrow">Defensa pasiva del equipo</div>
+        <h3>Mientras Rosa y Negro sigan en mesa</h3>
+        <p>Todos los Rangers ganan <strong>Super Senses</strong> (Rosa) y <strong>Combat Reflexes</strong> (Negro). Eso significa +2 de defensa contra ataques cuerpo a cuerpo y una tirada de evasión con 5–6 en cada golpe recibido. Protégelos: perder a uno de los dos le quita la habilidad a los cinco.</p>
+      </div>
+      <div class="plan">
+        <div class="eyebrow">Amenazas a vigilar</div>
+        <h3>Lo que más daño os hace</h3>
+        <ul>
+          <li><strong>Outwit/contraataques de rasgos</strong>: si anulan Leadership o Saving Bulk and Skull, tu economía de acciones se cae.</li>
+          <li><strong>Daño penetrante y Precision Strike</strong>: atraviesan Toughness/Impervious e ignoran tus evasiones.</li>
+          <li><strong>Pulse Wave rival</strong>: no anula ¡Go Go! (Protected) pero sí apaga Super Senses y Combat Reflexes en ese ataque.</li>
+          <li>Equipos de largo alcance que te obligan a cruzar el mapa: usa la recolocación de Azul y el Hypersonic de Amarillo.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="sinergias">
+  <div class="wrap">
+    <div class="sec-head"><div>
+      <div class="eyebrow">Rasgos de equipo</div>
+      <h2>Mapa de sinergias</h2>
+      <p>Cada Ranger aporta un rasgo que mejora a todos los que tienen la palabra clave Power Rangers.</p>
+    </div></div>
+    <div class="scroll">
+      <table class="syn">
+        <thead><tr><th>Rasgo</th><th>Origen</th><th>Efecto</th><th>Cuándo</th><th>Combina con</th></tr></thead>
+        <tbody id="synbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="partida">
+  <div class="wrap">
+    <div class="sec-head"><div>
+      <div class="eyebrow">En mesa</div>
+      <h2>Tracker de partida</h2>
+      <p>Lleva el clic, las fichas de acción y el ¡Go Go! de cada Ranger. Se guarda en este navegador.</p>
+    </div></div>
+    <div id="gg-alert"></div>
+    <div class="tbar">
+      <div class="st">¡Go Go!: <span id="gg-state"></span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="clear-tokens" type="button">Fin de turno: limpiar fichas</button>
+        <button class="btn" id="reset" type="button">Nueva partida</button>
+      </div>
+    </div>
+    <div id="reset-confirm"></div>
+    <div class="tracker" id="tracker"></div>
+    <div class="log" id="log" aria-label="Registro"></div>
+  </div>
+</section>
+
+<section id="poderes">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Referencia</div>
+        <h2>Poderes del equipo</h2>
+        <p>Todos los poderes estándar que aparecen en los cinco diales, con quién los tiene.</p>
+      </div>
+      <div class="gfilter" id="gfilter"></div>
+    </div>
+    <div class="gl" id="glossary"></div>
+  </div>
+</section>
+
+<section id="reglas">
+  <div class="wrap">
+    <div class="sec-head"><div>
+      <div class="eyebrow">Chuleta</div>
+      <h2>Cómo se juega</h2>
+      <p>Lo básico de HeroClix que más afecta a este equipo.</p>
+    </div></div>
+    <div class="rules">
+      <div class="plan"><h3>Leer el dial</h3><ul>
+        <li>Arriba a la izquierda: <strong>alcance</strong> y número de rayos (= objetivos de un ataque a distancia). Rojo 3/1, Azul 3/1, Amarillo 4/2, Negro 4/1, Rosa 5/2.</li>
+        <li>Filas: velocidad, ataque, defensa y daño. El color del recuadro indica el poder estándar activo en ese clic.</li>
+        <li>Recuadro blanco con borde negro: poder especial (descrito en la carta). Blanco sin borde: sin poder. Negro relleno: Outwit en el caso de Azul.</li>
+        <li>El daño gira el dial hacia la derecha; la curación hacia la izquierda.</li>
+      </ul></div>
+      <div class="plan"><h3>Turno y acciones</h3><ul>
+        <li>Tienes tantas acciones por turno como indique el formato (normalmente según los puntos; en 300 son 3).</li>
+        <li>Cada acción no libre da una ficha de acción al personaje.</li>
+        <li>Actuar con una ficha ya puesta es <strong>forzar</strong>: recibe 1 de daño (salvo Willpower).</li>
+        <li>Al final de tu turno, quitas las fichas de los personajes que no actuaron ese turno.</li>
+      </ul></div>
+      <div class="plan"><h3>Atacar</h3><ul>
+        <li>Tira 2d6 + ataque. Si iguala o supera la defensa del objetivo, impacta y hace su daño.</li>
+        <li>Doble 6: impacto crítico (+1 daño). Doble 1: fallo crítico (te haces 1 de daño).</li>
+        <li>Cuerpo a cuerpo: objetivo adyacente. A distancia: dentro del alcance y con línea de visión.</li>
+      </ul></div>
+      <div class="plan"><h3>Moverse</h3><ul>
+        <li>Si empiezas adyacente a un rival, tira 1d6 para separarte (break away): 4–6 lo consigues.</li>
+        <li>Al quedar adyacente a un rival, te detienes.</li>
+        <li>Recolocar (place), como hace Azul, no es moverse: no necesita break away ni cuenta como movimiento.</li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Textos de cartas transcritos de las cartas HBX1-001 a HBX1-005. Las descripciones de poderes estándar son un resumen en español basado en la tarjeta de poderes (PAC) y el reglamento comprensivo de WizKids; para torneos, comprueba siempre la redacción exacta en la versión más reciente publicada en wizkids.com.</p>
+    <p>Power Rangers y Hasbro son marcas de SCG Power Rangers LLC y/o Hasbro. HeroClix es marca de WizKids/NECA, LLC. Gestor no oficial para uso personal.</p>
+  </div>
+</footer>
+
+<div class="lb" id="lb" hidden><button type="button" id="lb-close">Cerrar</button><img id="lb-img" alt=""></div>
+
+<script>
+const P = {
+  charge:{n:"Charge",es:"Carga",t:"spd",c:"#3fa64a",d:"PODER: reduce su velocidad a la mitad, se mueve y después hace un ataque cuerpo a cuerpo como acción libre."},
+  flurry:{n:"Flurry",es:"Ráfaga",t:"spd",c:"#d62b2b",d:"PODER: hace hasta dos ataques cuerpo a cuerpo."},
+  sidestep:{n:"Sidestep",es:"Paso lateral",t:"spd",c:"#e6a8d7",tx:"#111",d:"LIBRE: se mueve hasta 2 casillas. No consume acción ni da ficha."},
+  leap:{n:"Leap/Climb",es:"Saltar/Trepar",t:"spd",c:"#f08a1c",d:"Se libra automáticamente al alejarse, ignora el terreno elevado y obstaculizante al moverse y puede atacar cuerpo a cuerpo a otra elevación."},
+  hyper:{n:"Hypersonic Speed",es:"Velocidad hipersónica",t:"spd",c:"#8a5a2b",d:"PODER: se mueve ignorando personajes y terreno obstaculizante; en cualquier punto del movimiento puede hacer un ataque cuerpo a cuerpo o uno a distancia con el alcance a la mitad."},
+  force:{n:"Force Blast",es:"Onda de fuerza",t:"spd",c:"#8b3fc4",d:"Empuja (knockback) a un rival adyacente varias casillas, según tirada. Útil para sacar a un rival de una trabazón o tirarlo de un elevado."},
+  running:{n:"Running Shot",es:"Disparo en carrera",t:"spd",c:"#8d8f96",d:"PODER: reduce su velocidad a la mitad, se mueve y después hace un ataque a distancia como acción libre."},
+  bcf:{n:"Blades/Claws/Fangs",es:"Cuchillas/Garras/Colmillos",t:"atk",c:"#c8202a",d:"Al impactar cuerpo a cuerpo, puedes tirar 1d6 y usar el resultado como daño en lugar del valor impreso."},
+  pulse:{n:"Pulse Wave",es:"Onda de pulso",t:"atk",c:"#f2d21a",tx:"#111",d:"PODER: alcance a la mitad; ataca a todos los personajes en alcance y línea de visión, ignorando sus poderes y habilidades durante el ataque. Cada impactado recibe 1 de daño (daño normal si solo hay un objetivo). ¡Cuidado con los aliados!"},
+  quake:{n:"Quake",es:"Terremoto",t:"atk",c:"#8fd12b",tx:"#111",d:"PODER: ataque cuerpo a cuerpo contra todos los rivales adyacentes; cada impactado recibe 2 de daño y sufre retroceso (knockback)."},
+  prec:{n:"Precision Strike",es:"Golpe de precisión",t:"atk",c:"#c9a6e6",tx:"#111",d:"Su daño no puede reducirse por debajo de 1 y sus ataques no pueden ser evadidos."},
+  ppb:{n:"Penetrating/Psychic Blast",es:"Disparo penetrante",t:"atk",c:"#2a62d4",d:"PODER: ataque a distancia cuyo daño es penetrante: no puede reducirse."},
+  imperv:{n:"Impervious",es:"Impenetrable",t:"def",c:"#8a6a3a",d:"Al ser impactado tira 1d6: con 5–6 evita el daño; si no, el daño recibido se reduce en 2."},
+  will:{n:"Willpower",es:"Voluntad",t:"def",c:"#7b3fc0",d:"No recibe daño por forzar: puede actuar con una ficha de acción ya puesta sin perder un clic."},
+  tough:{n:"Toughness",es:"Dureza",t:"def",c:"#f0a020",tx:"#111",d:"Reduce en 1 el daño recibido."},
+  esd:{n:"Energy Shield/Deflection",es:"Escudo de energía",t:"def",c:"#3a9a3a",d:"+2 a la defensa contra ataques a distancia."},
+  defend:{n:"Defend",es:"Defender",t:"def",c:"#f3cf1a",tx:"#111",d:"Los aliados adyacentes pueden usar la defensa sin modificar de este personaje en lugar de la suya."},
+  invul:{n:"Invulnerability",es:"Invulnerabilidad",t:"def",c:"#9aa0a8",tx:"#111",d:"Reduce en 2 el daño recibido."},
+  empower:{n:"Empower",es:"Potenciar",t:"dmg",c:"#e8b8e6",tx:"#111",d:"Los aliados adyacentes suman +1 al daño de sus ataques cuerpo a cuerpo."},
+  outwit:{n:"Outwit",es:"Burlar",t:"dmg",c:"#111",d:"LIBRE: anula un poder estándar o habilidad de combate de un rival en alcance y línea de visión hasta tu próximo turno."},
+  prob:{n:"Probability Control",es:"Control de probabilidad",t:"dmg",c:"#5aa7e6",tx:"#111",d:"Una vez por turno, puede hacer repetir una tirada de ataque (la tuya o la de un rival en alcance y línea de visión)."},
+  perplex:{n:"Perplex",es:"Desconcertar",t:"dmg",c:"#a06a3a",d:"LIBRE: modifica +1 o −1 un valor de combate de un personaje en alcance y línea de visión hasta el final del turno."},
+  rce:{n:"Ranged Combat Expert",es:"Experto a distancia",t:"dmg",c:"#d23a2a",d:"PODER: ataque a distancia con +2 al ataque, +2 al daño o +1 a ambos."}
+};
+const TYPES={spd:"Velocidad",atk:"Ataque",def:"Defensa",dmg:"Daño"};
+
+const R = [
+ {id:"red",name:"Red Ranger",es:"Ranger Rojo",code:"HBX1-001",c:"var(--red)",hex:"#e3262d",real:"Jason Lee Scott",zord:"Tiranosaurio",
+  role:"Líder · Atacante cuerpo a cuerpo",range:3,targets:1,
+  kw:["Power Rangers","Armor","Martial Artist","Vehicle","Warrior"],
+  summary:"El ariete del equipo. Carga a velocidad 8 con ataque 11, aguanta con Impervious y empuja a todo el equipo con Leadership y Empower. En modo Zord se convierte en la mayor amenaza de área de la mesa.",
+  dial:{
+   spd:[[8,"charge"],[8,"charge"],[6,"charge"],[6,"charge"],[6,"flurry"],[5,"flurry"],0,0,[6,"charge"],[6,"charge"],[5,"charge"],0],
+   atk:[[11,"sp:sword"],[11,"sp:sword"],[11,"sp:sword"],[11,"sp:sword"],[10,"bcf"],[10,"bcf"],0,0,[12,""],[11,""],[10,""],0],
+   def:[[18,"imperv"],[18,"imperv"],[18,"imperv"],[17,"imperv"],[17,"will"],[17,"will"],0,0,[19,"tough"],[18,"tough"],[18,"tough"],0],
+   dmg:[[4,""],[3,""],[3,"empower"],[3,"empower"],[2,"empower"],[2,"empower"],0,0,[4,"sp:zord"],[4,"sp:zord"],[3,"sp:zord"],0]},
+  sp:{sword:{n:"Power Sword",t:"atk",q:"Blades/Claws/Fangs. When Red Ranger uses it and rolls a 1-3, after resolutions you may remove an action token from a friendly character with the Martial Artist or Power Rangers keyword.",
+       d:"Tiene Blades/Claws/Fangs. Si al usarlo sacas 1–3 en el d6 (el resultado “malo”), tras resolver puedes quitar una ficha de acción a un aliado Martial Artist o Power Rangers. Un mal golpe se convierte en una acción gratis para el equipo."},
+      zord:{n:"Zord: Tyrannosaurus",t:"dmg",q:"STOP. [Gigante]. // Quake. When Red Ranger uses it, he has Giant Reach: 6.",
+       d:"STOP y tamaño Gigante. Tiene Quake y, al usarlo, Giant Reach 6: su Quake golpea a todos los rivales a 6 casillas o menos con línea de visión. Cada impactado recibe 2 de daño y retroceso."}},
+  traits:[{n:"The Leader",q:"Leadership. When Red Ranger uses it and succeeds, this turn friendly characters with the Power Rangers keyword modify attack +1.",
+       d:"Tiene Leadership (al inicio de tu turno tiras 1d6; con éxito ganas +1 acción ese turno). Si tiene éxito, además todos los Rangers suman +1 al ataque durante el turno."}],
+  how:["Abre con Charge contra el objetivo más caro del rival: velocidad 8 y ataque 11 (12 con Leadership).","Mantén aliados adyacentes en clics 3–6: su Empower les da +1 al daño cuerpo a cuerpo.","En clics 5–6 cambia Charge por Flurry: dos ataques por acción con Blades/Claws/Fangs.","En modo Zord, colócalo con muchos rivales a 6 casillas y lanza Quake: es el ataque de área más fuerte del equipo."],
+  tips:["Willpower en clics 5–6: puede forzar sin perder vida.","Una tirada baja de Power Sword no es un fracaso: devuelve una acción al equipo."]},
+ {id:"blue",name:"Blue Ranger",es:"Ranger Azul",code:"HBX1-002",c:"var(--blue)",hex:"#2f63e6",real:"Billy Cranston",zord:"Triceratops",
+  role:"Estratega · Control",range:3,targets:1,
+  kw:["Power Rangers","Armor","Martial Artist","Scientist","Vehicle","Warrior"],
+  summary:"El cerebro: recoloca al equipo cada turno, apaga poderes rivales con Outwit y pega con alcance de lanza. En Zord es el muro del equipo.",
+  dial:{
+   spd:[[7,"sidestep"],[7,"sidestep"],[7,"sidestep"],[6,"sidestep"],[6,"leap"],[6,"leap"],0,0,[8,"charge"],[6,"charge"],[6,"charge"],0],
+   atk:[[11,"sp:lance"],[11,"sp:lance"],[11,"sp:lance"],[10,"sp:lance"],[10,"pulse"],[10,"pulse"],0,0,[11,""],[12,""],[11,""],0],
+   def:[[18,"tough"],[18,"tough"],[18,"esd"],[17,"esd"],[17,"esd"],[17,"esd"],0,0,[19,"sp:zord"],[18,"sp:zord"],[18,"sp:zord"],0],
+   dmg:[[3,""],[3,""],[3,"outwit"],[2,"outwit"],[2,"outwit"],[2,"outwit"],0,0,[4,"outwit"],[4,"outwit"],[3,"outwit"],0]},
+  sp:{lance:{n:"Power Lance",t:"atk",q:"Giant Reach: 2, Quake.",
+       d:"Giant Reach 2 (ataca cuerpo a cuerpo a 2 casillas) y Quake: puede golpear a todos los rivales adyacentes, 2 de daño y retroceso."},
+      zord:{n:"Zord: Triceratops",t:"def",q:"STOP. [Gigante], [Movimiento mejorado], Toughness.",
+       d:"STOP, tamaño Gigante, un símbolo de movimiento mejorado y Toughness (−1 al daño recibido). El Zord más duro del equipo."}},
+  traits:[{n:"Inventions and Strategy",q:"At the beginning of your turn, for all characters with this trait, you may place a friendly character with the Power Rangers keyword up to 3 squares away from their current square.",
+       d:"Una vez al inicio de tu turno (para todo el equipo) recolocas a un Ranger hasta 3 casillas. No es movimiento: no necesita break away, no da ficha y no gasta acción."}],
+  how:["Usa su rasgo cada turno: saca a un Ranger trabado, acerca a Rojo para Leadership o pon a Rosa en línea de visión.","Outwit en clics 3+ (y 9–11): apaga Stealth, Impervious, Probability Control o la defensa clave del rival antes de atacar.","Power Lance golpea desde 2 casillas sin quedar adyacente; con Quake limpia grupos.","Clics 5–6: Pulse Wave atraviesa defensas, pero también daña a tus aliados en alcance."],
+  tips:["Combina la recolocación con Charge: coloca a Rojo o Negro 3 casillas más cerca y luego carga.","Toughness y Energy Shield le hacen buen señuelo contra tiradores."]},
+ {id:"yellow",name:"Yellow Ranger",es:"Ranger Amarillo",code:"HBX1-003",c:"var(--yellow)",hex:"#f3c300",real:"Trini Kwan",zord:"Tigre dientes de sable",
+  role:"Velocidad · Motor de acciones",range:4,targets:2,lt:false,
+  kw:["Power Rangers","Armor","Martial Artist","Scientist","Vehicle","Warrior"],
+  summary:"El motor del equipo: su rasgo devuelve acciones en cada impacto, protege a los aliados con Defend 19 y llega a cualquier sitio con Hypersonic Speed.",
+  dial:{
+   spd:[[6,"hyper"],[6,"hyper"],[6,"hyper"],[5,"sidestep"],[5,"sidestep"],[5,"sidestep"],0,0,[7,"hyper"],[6,"hyper"],[6,"hyper"],0],
+   atk:[[11,"sp:daggers"],[11,"sp:daggers"],[10,"sp:daggers"],[10,"sp:daggers"],[10,"bcf"],[10,"bcf"],0,0,[12,"prec"],[11,"prec"],[10,"prec"],0],
+   def:[[19,"defend"],[19,"defend"],[19,"defend"],[18,"tough"],[17,"tough"],[17,"tough"],0,0,[19,"tough"],[18,"tough"],[18,"tough"],0],
+   dmg:[[3,"prob"],[3,"prob"],[3,"prob"],[2,"prob"],[2,""],[2,""],0,0,[3,"sp:zord"],[3,"sp:zord"],[3,"sp:zord"],0]},
+  sp:{daggers:{n:"Power Daggers",t:"atk",q:"Precision Strike. // Once per turn when Yellow Ranger misses, after that attack resolves she may immediately make an attack.",
+       d:"Precision Strike (daño mínimo 1, no evadible). Además, una vez por turno, si falla, puede atacar de nuevo inmediatamente. Un fallo casi nunca se pierde."},
+      zord:{n:"Zord: Sabretooth Tiger",t:"dmg",q:"STOP. [Gigante], Probability Control.",
+       d:"STOP, tamaño Gigante y Probability Control: vuelve a tener la repetición de tiradas en modo Zord."}},
+  traits:[{n:"Saving Bulk and Skull… Again",q:"Once per turn when a friendly character with the Power Rangers keyword hits, after resolutions you may remove an action token from them.",
+       d:"Una vez por turno, cuando un Ranger impacta, tras resolver le quitas una ficha de acción. Ese Ranger puede volver a actuar sin forzar."}],
+  how:["Hypersonic Speed: entra, ataca y sale en la misma acción. Ideal para rematar figuras heridas.","Clics 1–3: quédate adyacente al Ranger más expuesto; Defend le presta tu defensa 19.","Probability Control en clics 1–4: repite tu fallo o el impacto crítico del rival.","Power Daggers + Probability Control: si fallas, repites; si vuelves a fallar, atacas de nuevo."],
+  tips:["Saving Bulk and Skull funciona con el primer impacto de cualquier Ranger cada turno: planifica quién golpea primero.","Alcance 4 con 2 objetivos: también puede disparar a dos rivales a la vez."]},
+ {id:"black",name:"Black Ranger",es:"Ranger Negro",code:"HBX1-004",c:"var(--black)",hex:"#9aa3b5",real:"Zack Taylor",zord:"Mastodonte",
+  role:"Tanque · Disruptor",range:4,targets:1,
+  kw:["Power Rangers","Armor","Martial Artist","Vehicle","Warrior"],
+  summary:"Pega fuerte cerca y lejos con el Power Axe, aguanta con Invulnerability y desordena al rival con Force Blast, Quake y Perplex. En Zord llena de fichas a quien golpea.",
+  dial:{
+   spd:[[8,"charge"],[8,"charge"],[8,"charge"],[6,"force"],[6,"force"],[6,"force"],0,0,[8,"sidestep"],[6,"sidestep"],[6,"sidestep"],0],
+   atk:[[11,"sp:axe"],[11,"sp:axe"],[10,"sp:axe"],[10,"sp:axe"],[10,"quake"],[11,"quake"],0,0,[12,""],[11,""],[11,""],0],
+   def:[[18,"invul"],[18,"invul"],[18,"invul"],[17,"invul"],[17,"will"],[17,"will"],0,0,[19,"tough"],[18,"tough"],[18,"tough"],0],
+   dmg:[[3,""],[3,""],[3,"perplex"],[2,"perplex"],[2,"perplex"],[3,"perplex"],0,0,[3,"sp:zord"],[4,"sp:zord"],[3,"sp:zord"],0]},
+  sp:{axe:{n:"Power Axe",t:"atk",q:"Blades/Claws/Fangs, but may use it with close or range attacks.",
+       d:"Blades/Claws/Fangs que también funciona con ataques a distancia: dispara a 4 casillas tirando 1d6 de daño."},
+      zord:{n:"Zord: Mastodon",t:"dmg",q:"STOP. [Gigante]. // When Black Ranger hits, give each hit character an action token.",
+       d:"STOP y tamaño Gigante. Cada personaje que impacta recibe una ficha de acción: si ya tenía una, no podrá actuar sin forzar."}},
+  traits:[{n:"Fancy Footwork",q:"Friendly characters with the Power Rangers keyword can use Combat Reflexes.",
+       d:"Todos los Rangers tienen Combat Reflexes: +2 a la defensa contra ataques cuerpo a cuerpo."}],
+  how:["Clics 1–3: Charge 8 con Power Axe; o quédate atrás y dispara a 4 casillas con Blades/Claws/Fangs.","Clics 4–6: Force Blast para separar a un rival de tus tiradores o tirarlo de un elevado.","Quake en clics 5–6 contra grupos adyacentes.","Perplex: +1 al ataque de un aliado antes de un golpe clave o −1 a la defensa del objetivo."],
+  tips:["Invulnerability (−2) hace que los ataques de 2 de daño no le hagan nada.","En Zord, golpea primero a quien ya tenga una ficha: le obligas a forzar o pasar."]},
+ {id:"pink",name:"Pink Ranger",es:"Ranger Rosa",code:"HBX1-005",c:"var(--pink)",hex:"#e24aa7",real:"Kimberly Hart",zord:"Pterodáctilo",
+  role:"Tiradora · Apoyo a distancia",range:5,targets:2,
+  kw:["Power Rangers","Armor","Marksman","Martial Artist","Vehicle","Warrior"],
+  summary:"La única con alcance 5 y dos objetivos. Dispara mientras se mueve, atraviesa defensas y da Super Senses a todo el equipo.",
+  dial:{
+   spd:[[6,"running"],[6,"running"],[8,"running"],[8,"sidestep"],[6,"sidestep"],[6,"sidestep"],0,0,[8,"running"],[8,"running"],[6,"running"],0],
+   atk:[[11,"sp:bow"],[11,"sp:bow"],[11,"sp:bow"],[10,"ppb"],[10,"ppb"],[10,"ppb"],0,0,[12,"ppb"],[11,"ppb"],[11,"ppb"],0],
+   def:[[18,"tough"],[17,"tough"],[17,"tough"],[17,"esd"],[17,"esd"],[17,"esd"],0,0,[20,"tough"],[19,"tough"],[18,"tough"],0],
+   dmg:[[3,""],[3,""],[3,""],[3,"rce"],[3,"rce"],[2,"rce"],0,0,[4,"sp:zord"],[4,"sp:zord"],[3,"sp:zord"],0]},
+  sp:{bow:{n:"Power Bow",t:"atk",q:"Energy Explosion, Precision Strike.",
+       d:"Energy Explosion (el disparo también salpica a los personajes adyacentes al objetivo) y Precision Strike (daño mínimo 1, no evadible). Excelente contra grupos y contra rivales que esquivan."},
+      zord:{n:"Zord: Pterodactyl",t:"dmg",q:"STOP. [Vuelo], [Gigante].",
+       d:"STOP, tamaño Gigante y vuelo: se mueve por encima del terreno y busca la línea de visión que quiera. Defensa 20 en clic 9."}},
+  traits:[{n:"Gymnastics at the Juice Bar",q:"Friendly characters with the Power Rangers keyword can use Super Senses.",
+       d:"Todos los Rangers tienen Super Senses: al ser impactados tiran 1d6 y con 5–6 evitan el ataque."}],
+  how:["Running Shot: muévete a la mitad de velocidad y dispara en la misma acción. Siempre a máxima distancia.","Con 2 objetivos, reparte o concentra; Energy Explosion castiga a rivales agrupados.","Clics 4–6: Penetrating Blast + Ranged Combat Expert (+2 daño) atraviesan Toughness e Invulnerability.","Escóndela detrás del bloque: si cae, el equipo pierde Super Senses."],
+  tips:["Sidestep en clics 4–6 es libre: recoloca 2 casillas y aún puedes actuar.","Precision Strike ignora las evasiones del rival, incluido su propio Super Senses."]}
+];
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+const KO=new Set([7,8,12]);
+function img(r,side){return `img/${r.id}-${side}.webp`}
+
+/* fan */
+(function(){
+  const fan=$("#fan"); const rot=[-16,-8,0,8,16];
+  R.forEach((r,i)=>{const im=document.createElement("img");im.src=img(r,"front");im.alt=`Carta ${r.name}`;im.loading="eager";
+    const x=(i-2)*22;const t=`translate(calc(-50% + ${x}%), calc(-50% + ${Math.abs(i-2)*10}px)) rotate(${rot[i]}deg)`;
+    im.style.transform=t;im.style.zIndex=5-Math.abs(i-2);im.style.setProperty("--g",r.hex);im.style.setProperty("--d",(i*.4)+"s");
+    im.addEventListener("mouseenter",()=>im.style.transform=t+" translateY(-14px)");
+    im.addEventListener("mouseleave",()=>im.style.transform=t);
+    im.addEventListener("click",()=>{select(r.id);document.getElementById("escuadra").scrollIntoView({behavior:"smooth"})});
+    fan.appendChild(im);});
+})();
+
+/* tabs */
+let cur=R[0].id, click=1, side="front";
+function renderTabs(){
+  $("#tabs").innerHTML=R.map(r=>`<button class="tab" role="tab" style="--c:${r.c}" aria-selected="${r.id===cur}" data-id="${r.id}" aria-label="${r.es}"><span class="dot"></span><span class="txt"><b>${r.es}</b><small>${r.role.split(" · ")[0]}</small></span></button>`).join("");
+  document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>select(b.dataset.id));
+}
+function select(id){cur=id;click=1;side="front";renderTabs();renderRanger();try{history.replaceState(null,"","#"+id)}catch(e){}}
+
+function chipFor(r,cell){
+  if(!cell) return {html:`<div class="chip ko">KO</div>`,b:"KO",s:"El personaje queda eliminado."};
+  const [v,k]=cell;
+  if(!k) return {html:`<div class="chip none num">${v}</div>`,b:"Sin poder",s:"Valor sin poder asociado en este clic."};
+  if(k.startsWith("sp:")){const s=r.sp[k.slice(3)];return {html:`<div class="chip sp num">${v}</div>`,b:`${s.n} <span class="tag">especial</span>`,s:s.d};}
+  const p=P[k];return {html:`<div class="chip num" style="--pc:${p.c};--pt:${p.tx||"#fff"}">${v}</div>`,b:`${p.n} <span class="tag">${p.es}</span>`,s:p.d};
+}
+function renderRanger(){
+  const r=R.find(x=>x.id===cur); const el=$("#ranger"); el.style.setProperty("--c",r.c);
+  const isKO=KO.has(click), zord=click>=9&&!isKO;
+  const rows=["spd","atk","def","dmg"].map(t=>{const c=chipFor(r,r.dial[t][click-1]);return `<div class="row"><div class="lbl">${TYPES[t]}</div>${c.html}<div class="pw"><b>${c.b}</b><span>${esc(c.s)}</span></div></div>`}).join("");
+  const spBoxes=Object.values(r.sp).map(s=>`<div class="box"><h4><span class="star">✦</span>${s.n} <span class="tag">${TYPES[s.t]}</span></h4><p>${s.d}</p><p class="q">“${esc(s.q)}”</p></div>`).join("");
+  const traits=r.traits.map(t=>`<div class="box"><h4><span class="star">★</span>${t.n} <span class="tag">rasgo</span></h4><p>${t.d}</p><p class="q">“${esc(t.q)}”</p></div>`).join("");
+  el.innerHTML=`
+  <div class="cardview">
+    <div class="flip ${side==="back"?"back":""}" id="flip" role="button" tabindex="0" aria-label="Ampliar carta"><div class="flip-inner"><img class="f" src="${img(r,"front")}" alt="${r.name} anverso"><img class="b" src="${img(r,"back")}" alt="${r.name} reverso"></div><div class="glare"></div></div>
+    <div class="seg"><button type="button" data-s="front" aria-pressed="${side==="front"}">Anverso</button><button type="button" data-s="back" aria-pressed="${side==="back"}">Reverso</button></div>
+    <div class="meta">
+      <div><small>Coste</small><b class="num">60 pts</b></div>
+      <div><small>Alcance / objetivos</small><b class="num">${r.range} · ${"⚡".repeat(r.targets)}</b></div>
+      <div><small>Identidad</small><b>${r.real}</b></div>
+      <div><small>Zord</small><b>${r.zord}</b></div>
+    </div>
+  </div>
+  <div class="rinfo">
+    <div class="rhead"><div><div class="code">${r.code}</div><h3>${r.es} <span style="color:var(--muted);font-weight:500;font-size:.6em">${r.name}</span></h3><span class="role ${r.id==="blue"||r.id==="red"||r.id==="pink"?"lt":""}">${r.role}</span></div></div>
+    <div class="kw">${r.kw.map(k=>`<span>${k}</span>`).join("")}</div>
+    <p class="summary">${r.summary}</p>
+    <div class="dial">
+      <div class="dial-top"><h4>Dial · clic <span class="num">${click}</span></h4><span class="phase ${zord?"zord":""}">${isKO?"KO":zord?"Forma Zord":"Forma Ranger"}</span></div>
+      <div class="clicks">${Array.from({length:12},(_,i)=>{const n=i+1;return `<button type="button" class="${KO.has(n)?"ko":""} num" aria-pressed="${n===click}" data-k="${n}" aria-label="Clic ${n}">${KO.has(n)?"KO":n}</button>`}).join("")}</div>
+      <div class="rows">${rows}</div>
+    </div>
+    <div class="cols">
+      ${spBoxes}
+      <div class="box full"><h4><span class="star">★</span>¡Go! ¡Go! Power Rangers! <span class="tag">rasgo de equipo</span></h4><p>Una vez por partida para todo el equipo: cuando un Ranger iba a quedar KO, puedes girar a <strong>todos</strong> los Rangers a su clic 9 (forma Zord). Protected: Pulse Wave.</p></div>
+      ${traits.replace('class="box"','class="box full"')}
+      <div class="box" style="--c:${r.c}"><h4>Cómo jugarlo</h4><ul>${r.how.map(h=>`<li>${h}</li>`).join("")}</ul></div>
+      <div class="box" style="--c:${r.c}"><h4>Claves</h4><ul>${r.tips.map(h=>`<li>${h}</li>`).join("")}</ul></div>
+    </div>
+  </div>`;
+  el.querySelectorAll(".clicks button").forEach(b=>b.onclick=()=>{click=+b.dataset.k;renderRanger()});
+  el.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{side=b.dataset.s;$("#flip").classList.toggle("back",side==="back");el.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.s===side))});
+  const fl=$("#flip"); const open=()=>openLB(img(r,side),`${r.name} ${side==="front"?"anverso":"reverso"}`);
+  fl.onclick=open; fl.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}};
+  fl.onpointermove=e=>{if(e.pointerType!=="mouse")return;const b=fl.getBoundingClientRect();const px=(e.clientX-b.left)/b.width,py=(e.clientY-b.top)/b.height;
+    fl.style.setProperty("--ry",((px-.5)*16)+"deg");fl.style.setProperty("--rx",((.5-py)*16)+"deg");fl.style.setProperty("--mx",(px*100)+"%");fl.style.setProperty("--my",(py*100)+"%")};
+  fl.onpointerleave=()=>{fl.style.setProperty("--ry","0deg");fl.style.setProperty("--rx","0deg")};
+}
+
+/* lightbox */
+function openLB(src,alt){$("#lb-img").src=src;$("#lb-img").alt=alt;$("#lb").hidden=false;$("#lb-close").focus()}
+$("#lb").onclick=e=>{if(e.target.id!=="lb-img")$("#lb").hidden=true};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#lb").hidden=true});
+
+/* synergies */
+const who=id=>{const r=R.find(x=>x.id===id);return `<span class="who"><i style="background:${r.c}"></i>${r.es}</span>`};
+const SYN=[
+ ["¡Go! ¡Go! Power Rangers!","all","Rescate: todos a clic 9 (forma Zord) en vez de un KO.","Una vez por partida","Activarlo con varios Rangers en clics 4–6."],
+ ["The Leader","red","Leadership; con éxito, +1 al ataque de todos los Rangers ese turno.","Inicio de tu turno","Turno de Charge masivo; Power Daggers de Amarillo."],
+ ["Inventions and Strategy","blue","Recoloca a un Ranger hasta 3 casillas.","Inicio de tu turno","Charge de Rojo/Negro; sacar a Rosa de una trabazón."],
+ ["Saving Bulk and Skull… Again","yellow","Al primer impacto de un Ranger, le quitas una ficha de acción.","1 vez por turno","Rojo y Negro atacando cada turno sin forzar."],
+ ["Power Sword","red","Con 1–3 en Blades/Claws/Fangs, quita una ficha a un aliado.","Al atacar con él","Saving Bulk and Skull: hasta dos fichas fuera por turno."],
+ ["Fancy Footwork","black","Todos los Rangers tienen Combat Reflexes (+2 def. cuerpo a cuerpo).","Siempre","Defend de Amarillo; Impervious de Rojo."],
+ ["Gymnastics at the Juice Bar","pink","Todos los Rangers tienen Super Senses (evitan con 5–6).","Siempre","Toughness y modo Zord con STOP."]
+];
+$("#synbody").innerHTML=SYN.map(s=>`<tr><td>${s[0]}</td><td>${s[1]==="all"?'<span class="who">Los cinco</span>':who(s[1])}</td><td>${s[2]}</td><td>${s[3]}</td><td>${s[4]}</td></tr>`).join("");
+
+/* glossary */
+let gf="all";
+function renderGloss(){
+  $("#gfilter").innerHTML=[["all","Todos"],["spd","Velocidad"],["atk","Ataque"],["def","Defensa"],["dmg","Daño"]].map(([k,l])=>`<button type="button" aria-pressed="${gf===k}" data-k="${k}">${l}</button>`).join("");
+  document.querySelectorAll("#gfilter button").forEach(b=>b.onclick=()=>{gf=b.dataset.k;renderGloss()});
+  const extra={super:{n:"Super Senses",es:"Supersentidos",t:"def",c:"#e9edf7",d:"Al ser impactado, tira 1d6: con 5–6 evita el ataque. Lo tienen todos los Rangers gracias a Rosa."},
+    reflex:{n:"Combat Reflexes",es:"Reflejos de combate",t:"def",c:"#e9edf7",d:"+2 a la defensa contra ataques cuerpo a cuerpo. Lo tienen todos los Rangers gracias a Negro."},
+    lead:{n:"Leadership",es:"Liderazgo",t:"trait",c:"#e9edf7",d:"Al inicio de tu turno tira 1d6; con 5–6 ganas +1 acción para ese turno. Rojo añade +1 al ataque de los Rangers si sale bien."},
+    reach:{n:"Giant Reach: X",es:"Alcance gigante",t:"atk",c:"#e9edf7",d:"Puede atacar cuerpo a cuerpo a personajes hasta X casillas de distancia con línea de visión. Azul (2) y Rojo Zord con Quake (6)."},
+    stop:{n:"STOP",es:"Clic de parada",t:"trait",c:"#e9edf7",d:"Cuando el daño de un ataque rival revela este clic, el dial se detiene ahí. No puede contrarrestarse ni ignorarse. No frena daño que no sea de ataques."}};
+  const holders=k=>R.filter(r=>Object.values(r.dial).some(row=>row.some(c=>c&&c[1]===k))).map(r=>r.c);
+  const items=Object.entries(P).map(([k,p])=>({...p,h:holders(k)})).concat(Object.values(extra).map(p=>({...p,h:R.map(r=>r.c)})));
+  $("#glossary").innerHTML=items.filter(p=>gf==="all"||p.t===gf).map(p=>`<div class="g"><div class="sw" style="--pc:${p.c}"></div><div><b>${p.n}</b><em>${p.es} · ${TYPES[p.t]||"Habilidad"}</em><span>${p.d}</span><div class="who-row">${p.h.map(c=>`<i style="background:${c}"></i>`).join("")}</div></div></div>`).join("");
+}
+
+/* tracker */
+const KEY="mmpr-tracker-v1";
+const fresh=()=>({gogo:false,r:Object.fromEntries(R.map(r=>[r.id,{click:1,tok:0,ko:false}])),log:[]});
+let S=fresh(); try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.r)S=s}catch(e){}
+let pending=null;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const log=m=>{S.log.unshift(new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+m);S.log=S.log.slice(0,40)};
+function val(r,t,k){const c=r.dial[t][k-1];return c?c[0]:"–"}
+function renderTracker(){
+  $("#gg-state").innerHTML=S.gogo?'<span class="gg-off">usado</span>':'<span class="gg-on">disponible</span>';
+  $("#gg-alert").innerHTML=pending?`<div class="alert"><p><strong>${R.find(x=>x.id===pending).es}</strong> va a quedar KO. ¿Usar ¡Go! ¡Go! Power Rangers! y girar a todos a clic 9?</p><div style="display:flex;gap:8px"><button class="btn primary" id="gg-yes" type="button">¡Go Go! a clic 9</button><button class="btn" id="gg-no" type="button">Dejar KO</button></div></div>`:"";
+  if(pending){$("#gg-yes").onclick=()=>{R.forEach(r=>{const x=S.r[r.id];if(!x.ko||r.id===pending){x.click=9;x.ko=false}});S.gogo=true;log(`¡Go Go! activado por ${R.find(x=>x.id===pending).es}: todos a clic 9`);pending=null;save();renderTracker()};
+    $("#gg-no").onclick=()=>{const x=S.r[pending];x.ko=true;log(`${R.find(r=>r.id===pending).es} KO`);pending=null;save();renderTracker()};}
+  $("#tracker").innerHTML=R.map(r=>{const x=S.r[r.id];const k=x.click;
+    return `<div class="tk ${x.ko?"isko":""}" style="--c:${r.c}"><h4>${r.es}<span class="phase ${k>=9&&!x.ko?"zord":""}">${x.ko?"KO":k>=9?"Zord":"Ranger"}</span></h4>
+    <div class="clk num">${x.ko?"KO":k} <small>${x.ko?"":"clic"}</small></div>
+    <div class="mini">${["spd","atk","def","dmg"].map(t=>`<div><small>${TYPES[t].slice(0,3)}</small><b class="num">${x.ko?"–":val(r,t,k)}</b></div>`).join("")}</div>
+    <div class="btns"><button class="btn dmg" type="button" data-a="dmg" data-id="${r.id}" ${x.ko?"disabled":""}>−1 clic</button><button class="btn heal" type="button" data-a="heal" data-id="${r.id}" ${x.ko||k===1||k===9?"disabled":""}>Curar 1</button></div>
+    <div class="tokens"><span>Fichas</span>${[1,2].map(n=>`<button type="button" class="tok ${x.tok>=n?"on":""}" data-a="tok" data-n="${n}" data-id="${r.id}" aria-label="Ficha de acción ${n}" ${x.ko?"disabled":""}></button>`).join("")}</div></div>`}).join("");
+  document.querySelectorAll("#tracker [data-a]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.id,x=S.r[id],name=R.find(r=>r.id===id).es;
+    if(b.dataset.a==="tok"){const n=+b.dataset.n;x.tok=x.tok>=n?n-1:n}
+    if(b.dataset.a==="heal"){if(x.click>1&&x.click!==9){x.click--;log(`${name} se cura a clic ${x.click}`)}}
+    if(b.dataset.a==="dmg"){const nx=x.click+1;
+      if(KO.has(nx)){ if(!S.gogo&&nx===7){pending=id} else {x.ko=true;log(`${name} KO`)} }
+      else {x.click=nx;log(`${name} recibe daño: clic ${nx}`)}}
+    save();renderTracker()});
+  $("#log").innerHTML=S.log.length?S.log.map(l=>`<div>${esc(l)}</div>`).join(""):"<div>Sin eventos todavía. Usa −1 clic por cada punto de daño (en forma Zord, STOP limita cada ataque a 1 clic).</div>";
+}
+$("#clear-tokens").onclick=()=>{R.forEach(r=>S.r[r.id].tok=0);log("Fichas de acción retiradas");save();renderTracker()};
+$("#reset").onclick=()=>{$("#reset-confirm").innerHTML=`<div class="alert"><p>¿Empezar una partida nueva? Se pierde el estado actual.</p><div style="display:flex;gap:8px"><button class="btn primary" id="rs-yes" type="button">Sí, reiniciar</button><button class="btn" id="rs-no" type="button">Cancelar</button></div></div>`;
+  $("#rs-yes").onclick=()=>{S=fresh();pending=null;log("Nueva partida");save();$("#reset-confirm").innerHTML="";renderTracker()};
+  $("#rs-no").onclick=()=>$("#reset-confirm").innerHTML=""};
+
+const h=location.hash.slice(1); if(R.some(r=>r.id===h)) cur=h;
+renderTabs();renderRanger();renderGloss();renderTracker();
+</script>
+
+</body></html>
